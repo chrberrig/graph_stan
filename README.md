@@ -2,17 +2,17 @@ Makes a graphical representation of a STAN-model using graphviz
 
 # Installation
 Run :
-'''bash
+```bash
 make
 make append_main_function
-'''
+```
 In order to generate an executable python script and apply "run-as-main"-functionallity to it. 
 
 # Running
 then in order to generate the graph of the STAN-model, run:
-'''bash
+```bash
 python3 graph_stan.py [filename].stan
-'''
+```
 execiting the generated script. 
 
 The resulting generated files are:
@@ -20,8 +20,8 @@ The resulting generated files are:
 - a .png from running the dot file though graphviz
 
 # Reinstall
-'''bash
+```bash
 make clean
-'''
+```
 
 Deletes the generated .py files in the directory. 
