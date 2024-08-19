@@ -1,4 +1,3 @@
-stan_model*
-*.stan
-.ipynb_checkpoints/
-*.py
+*.png
+*.dot
+*.ipynb
