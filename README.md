@@ -56,7 +56,7 @@ python3 graph_stan.py [options] <stan_file>
 
 # Command-Line Options
 
-- -s, --squish: Squish out variables from the dependency tree. Multiple variables can be specified.
+- -s, --squish: Squish out variables from the dependency tree. Multiple variables can be specified.Remember to terminate the list of variables to squish out with "--"
 - -l, --labels: Specify the path to a label mapping file for custom node labels.
 - -v, --verbose: Show full expressions for the dependencies (default is to show only the distribution names).
 
@@ -67,7 +67,13 @@ python3 graph_stan.py [options] <stan_file>
 python3 graph_stan.py example_hierarchical_linreg_iris.stan
 ```
 
-2. Generate a Graph with Custom Labels
+2. squish out variable "alpha" and "beta" from generated graph
+```bash
+python3 graph_stan.py -s alpha beta -- example_hierarchical_linreg_iris.stan
+```
+Note the termination of the list of variables indicated with `--`
+
+3. Generate a Graph with Custom Labels
 ```bash
 python3 graph_stan.py -l labels.txt example_hierarchical_linreg_iris.stan
 ```
@@ -81,7 +87,7 @@ sigma \sigma
 
 Note here that graphviz have some limitations of rendering symbols, like latex syntax, and the labels should be represented in Unicode. 
 
-3. Generate a Graph with Verbosity Control
+4. Generate a Graph with Verbosity Control
 ```bash
 python3 graph_stan.py -v example_hierarchical_linreg_iris.stan
 ```
