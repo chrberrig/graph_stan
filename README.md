@@ -5,10 +5,9 @@ The tool uses Graphviz to create graphical representations of the dependencies w
 
 The goal is currently not to make a 100% perfect graphical rendition of a STAN model, but to make a shortcut of the first 90%.
 
-# Installation
+# Quick start
 Currently, you run the python script from repository directory (or any location you move it to) as a script, no further installation required. 
 
-# Running
 In order to generate the graph of the STAN-model, run:
 ```bash
 python3 graph_stan.py path/to/file.stan
@@ -22,18 +21,18 @@ The resulting generated files are:
 
 ## Features
 
-    - **Graph Rendering**: Automatically generates a dependency graph from a Stan model file, showing the relationships between parameters and data.
-    - **Custom Labels**: Supports custom labeling of nodes using a label mapping file. This allows for LaTeX-style symbols or any other custom labels.
-    - **Verbosity Control**: Provides a command-line flag to control the level of detail shown in the dependency graph. You can choose to display full functional dependencies or only the names of the distributions.
-    - **Flexible Output**: Generates both .dot files for further customization and .png images for easy visualization.
+- **Graph Rendering**: Automatically generates a dependency graph from a Stan model file, showing the relationships between parameters and data.
+- **Custom Labels**: Supports custom labeling of nodes using a label mapping file. This allows for LaTeX-style symbols or any other custom labels.
+- **Verbosity Control**: Provides a command-line flag to control the level of detail shown in the dependency graph. You can choose to display full functional dependencies or only the names of the distributions.
+- **Flexible Output**: Generates both .dot files for further customization and .png images for easy visualization.
 
 ## Installation
 
 Ensure you have the following installed on your system:
 
-    Python: Make sure Python is installed. The tool is compatible with Python 3.
-    Graphviz: Install Graphviz for rendering the graphs.
-    dot2tex: Install dot2tex if you need LaTeX support.
+**Python**: Make sure Python is installed. The tool is compatible with Python 3.
+**Graphviz**: Install Graphviz for rendering the graphs.
+**dot2tex**: Install dot2tex if you need LaTeX support.
 
 ### Installing Dependencies
 
@@ -57,9 +56,9 @@ python3 graph_stan.py [options] <stan_file>
 
 # Command-Line Options
 
-    - -s, --squish: Squish out variables from the dependency tree. Multiple variables can be specified.
-    - -l, --labels: Specify the path to a label mapping file for custom node labels.
-    - -v, --verbose: Show full expressions for the dependencies (default is to show only the distribution names).
+- -s, --squish: Squish out variables from the dependency tree. Multiple variables can be specified.
+- -l, --labels: Specify the path to a label mapping file for custom node labels.
+- -v, --verbose: Show full expressions for the dependencies (default is to show only the distribution names).
 
 ## Example Commands
 
@@ -89,10 +88,8 @@ python3 graph_stan.py -v example_hierarchical_linreg_iris.stan
 
 ## Output Files
 
-    dependencies.dot: The generated .dot file representing the dependency graph.
-    dependencies.png: The rendered image of the dependency graph.
-
-Example .dot File Output
+- dependencies.dot: The generated .dot file representing the dependency graph.
+- dependencies.png: The rendered image of the dependency graph.
 
 ## Contributing
 
