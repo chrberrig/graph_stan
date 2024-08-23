@@ -46,11 +46,12 @@ def find_defined_parameters(content):
 
 def find_all_blocks(content):
     blocks = {}
-    block_pattern = r'(\w+)\s*\{'
+    # block_pattern = r'(\w+)\s*\{'
+    block_pattern = r'(\w+(?:\s+\w+)*)\s*\{'
     matches = re.finditer(block_pattern, content)
 
     for match in matches:
-        block_name = match.group(1)
+        block_name = match.group(1).strip()
         start = match.end()
         curly_brackets = 1
         end = start
@@ -63,8 +64,16 @@ def find_all_blocks(content):
             end += 1
         
         block_content = content[start:end-1].strip()
+        # If the block name already exists, append the new block to the list
+        # if block_name in blocks:
+        #     if isinstance(blocks[block_name], list):
+        #         blocks[block_name].append(block_content)
+        #     else:
+        #         blocks[block_name] = [blocks[block_name], block_content]
+        # else:
+        #     blocks[block_name] = block_content
         blocks[block_name] = block_content
-    
+ 
     return blocks
 
 def extract_dependencies(expression, defined_params):
@@ -145,12 +154,13 @@ def build_dependency_tree(blocks):
     """
     
     defined_params = set()
+    print("defined parameters: ")
     for block_name, content in blocks.items():
         defd_ps = find_defined_parameters(content)
-        #print(defd_ps)
+        print(block_name, defd_ps)
         defined_params = defined_params.union(defd_ps)
         
-    print(defined_params)
+    print("all", defined_params)
         
     dependency_tree = {}
     for block_name, content in blocks.items():
@@ -289,6 +299,7 @@ def main():
     parser.add_argument('-s', '--squish', nargs='*', type=str, help='Variable to squish out')
     parser.add_argument('-l', '--labels', type=str, help='Path to label mapping file')
     parser.add_argument('-v', '--verbose', action='store_true', help='Show full expressions in the dependency graph')
+    parser.add_argument('-o', '--output', type=str, help='Specify the base name for the output files (without extension)')
     parser.add_argument('stan_file', type=str, help='Path to the Stan model file')
 
     args = parser.parse_args()
@@ -310,7 +321,18 @@ def main():
             dep_tree = squish_out_variable(dep_tree, squish_var)
 
     dot = render_dependency_tree(dep_tree, label_mappings, verbose=args.verbose)
+    
+    # Determine the output filename base
+    output_base = args.output if args.output else 'dependencies'
+
+    # Save the .dot file with the specified output name
+    dot.save(f'{output_base}.dot')
+
+    # Render the graph to a .png file with the specified output name
+    dot.render(f'{output_base}', format='png', cleanup=False)
+
     dot.save('dependencies.dot')
+
     dot.render('dependencies', format='png', view=True, cleanup=True)
     # visualize_stan_model(args.stan_file)
 

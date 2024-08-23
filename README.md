@@ -59,6 +59,7 @@ python3 graph_stan.py [options] <stan_file>
 - -s, --squish: Squish out variables from the dependency tree. Multiple variables can be specified.Remember to terminate the list of variables to squish out with "--"
 - -l, --labels: Specify the path to a label mapping file for custom node labels.
 - -v, --verbose: Show full expressions for the dependencies (default is to show only the distribution names).
+- -o, --output: Specify the base name for the output files (without extension)
 
 ## Example Commands
 
