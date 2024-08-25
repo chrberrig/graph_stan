@@ -64,14 +64,6 @@ def find_all_blocks(content):
             end += 1
         
         block_content = content[start:end-1].strip()
-        # If the block name already exists, append the new block to the list
-        # if block_name in blocks:
-        #     if isinstance(blocks[block_name], list):
-        #         blocks[block_name].append(block_content)
-        #     else:
-        #         blocks[block_name] = [blocks[block_name], block_content]
-        # else:
-        #     blocks[block_name] = block_content
         blocks[block_name] = block_content
  
     return blocks
@@ -84,7 +76,7 @@ def extract_dependencies(expression, defined_params):
     candidates = re.findall(r'\b(\w+)\b', expression)
     
     # Filter out everything not a parameter or data
-    dependencies = [dep for dep in candidates if dep in defined_params]
+    dependencies = list(set([dep for dep in candidates if dep in defined_params]))
     
     return dependencies
 
@@ -132,8 +124,6 @@ def parse_dependencies(content, defined_params):
     dependencies = {}
     lines = content.splitlines()
 
-    #print(defined_params)
-    
     for line in lines:
         line = line.strip()
 
@@ -146,7 +136,7 @@ def parse_dependencies(content, defined_params):
     return dependencies
 
 
-def build_dependency_tree(blocks):
+def build_dependency_tree(blocks, verbose=False):
     """
     Builds a dependency tree from the parsed blocks.
     Returns a dictionary where each key is a variable name and the value is
@@ -154,19 +144,31 @@ def build_dependency_tree(blocks):
     """
     
     defined_params = set()
-    print("defined parameters: ")
+    print("Defined parameters: ")
     for block_name, content in blocks.items():
         defd_ps = find_defined_parameters(content)
-        print(block_name, defd_ps)
+        if verbose:
+            print(block_name, defd_ps, "\n")
         defined_params = defined_params.union(defd_ps)
         
-    print("all", defined_params)
+    if verbose:
+        print("Defined parameters (all blocks):", defined_params, "\n")
+        print("--"*20 + "\n")
         
     dependency_tree = {}
     for block_name, content in blocks.items():
         block_dependencies = parse_dependencies(content, defined_params)
+        if verbose:
+            print(block_name)
+            for var_name, details in block_dependencies.items():
+                print(" "*4+ var_name)
+                for k, v in details.items():
+                    print(" "*8 + f"{k}: {v}")
         dependency_tree.update(block_dependencies)
     
+    if verbose:
+        print("--"*20 + "\n")
+        
     return dependency_tree
 
 def squish_out_variable(dependency_tree, var_to_eliminate):
@@ -213,7 +215,7 @@ def squish_out_variable(dependency_tree, var_to_eliminate):
     
     return new_dependency_tree
 
-def parse_stan_file(file_path):
+def parse_stan_file(file_path, verbose=False):
     with open(file_path, 'r') as file:
         content = file.read()
     
@@ -222,7 +224,7 @@ def parse_stan_file(file_path):
     blocks = find_all_blocks(content)
 
     # Build the dependency tree
-    dependency_tree = build_dependency_tree(blocks)
+    dependency_tree = build_dependency_tree(blocks, verbose=verbose)
     
     return dependency_tree
 
@@ -238,7 +240,11 @@ def load_label_mappings(label_file):
             label_mappings[original] = new_label
     return label_mappings
 
-def render_dependency_tree(dependency_tree, label_mappings={}, verbose=False):
+
+# TODO: finish more elegant implementation of the recursive nature of rendering nodes, if not already rendered!
+# def render_node(node_name, dependency_tree, dot, label_mappings={}, explicit=False)
+
+def render_dependency_tree(dependency_tree, label_mappings={}, explicit=False, verbose=False):
     """
     Renders a flat dependency tree using Graphviz.
     
@@ -252,20 +258,25 @@ def render_dependency_tree(dependency_tree, label_mappings={}, verbose=False):
     added_nodes = set()  # Set to track added nodes
 
     # Add nodes and edges to the graph
+    if verbose:
+        print("Rendering dependencies:")
+
     for var, details in dependency_tree.items():
+        
+        if verbose:
+            print(var)
+            for k, v in details.items():
+                print(" "*4 + f"{k}: {v}")
 
         # Apply label mapping if available
         var_label = label_mappings.get(var, var)
-        # label = f"{var_label} ~ {distribution}" if distribution != 'None' else label
         
-        # Create a node for each variable
-        #variable_type = details['variable_type']
-        # dot.node(var, label=label, shape='circle')
-         # Determine the expression to show based on verbosity
-        if verbose:
+        # create a node for each variable
+        # determine the expression to show based on explicit-bool
+        if explicit:
             expression = details['expression']
         else:
-            # Only keep the distribution name if not verbose
+            # only keep the distribution name if not explicit
             expression = details['expression'].split('(')[0]
         #expression = details['expression']
         relation = details['relation']
@@ -273,20 +284,37 @@ def render_dependency_tree(dependency_tree, label_mappings={}, verbose=False):
         
         label = f"{var_label}{spacer}{relation}{spacer}{expression}" 
         
-        # Add the node if it hasn't been added yet
+        # add the node if it hasn't been added yet
         if var not in added_nodes:
             dot.node(var, label=label, shape='circle')
             added_nodes.add(var)
         # dot.node(var, label=label, shape='circle')
-
         
-        # Create edges from dependencies to the variable
+        # create edges from dependencies to the variable
         for dep in details['dependencies']:
             if dep not in added_nodes:
-                # Add the dependency node with the default options
+
+                # Apply label mapping if available
                 dep_label = label_mappings.get(dep, dep)
-                dot.node(dep, label=dep_label, shape='circle')
-                added_nodes.add(dep)
+                
+                # create a node for each variable
+                # determine the expression to show based on explicit-bool
+                if explicit:
+                    expression = details['expression']
+                else:
+                    # only keep the distribution name if not explicit
+                    expression = details['expression'].split('(')[0]
+                #expression = details['expression']
+                relation = details['relation']
+                spacer = "\n"*(relation=="~") + " "*(relation=="=")
+                
+                dep_label = f"{dep_label}{spacer}{relation}{spacer}{expression}" 
+                
+                # add the node if it hasn't been added yet
+                if var not in added_nodes:
+                    dot.node(dep, label=dep_label, shape='circle')
+                    added_nodes.add(dep)
+                # dot.node(var, label=label, shape='circle')
 
             dot.edge(dep, var)
 
@@ -295,32 +323,30 @@ def render_dependency_tree(dependency_tree, label_mappings={}, verbose=False):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Visualize a Stan model.')
-    parser.add_argument('-s', '--squish', nargs='*', type=str, help='Variable to squish out')
-    parser.add_argument('-l', '--labels', type=str, help='Path to label mapping file')
-    parser.add_argument('-v', '--verbose', action='store_true', help='Show full expressions in the dependency graph')
-    parser.add_argument('-o', '--output', type=str, help='Specify the base name for the output files (without extension)')
-    parser.add_argument('stan_file', type=str, help='Path to the Stan model file')
+    parser = argparse.ArgumentParser(description='visualize a stan model.')
+    parser.add_argument('-s', '--squish', nargs='*', type=str, help='variable to squish out')
+    parser.add_argument('-l', '--labels', type=str, help='path to label mapping file')
+    parser.add_argument('-e', '--explicit', action='store_true', help='show full expressions in the dependency graph')
+    parser.add_argument('-v', '--verbose', action='store_true', help='show verbose output of stan-file parsing')
+    parser.add_argument('-o', '--output', type=str, help='specify the base name for the output files (without extension)')
+    parser.add_argument('stan_file', type=str, help='path to the stan model file')
 
     args = parser.parse_args()
     
-    # print(args)
-    # print(args.squish)
-
-    dep_tree = parse_stan_file(args.stan_file)
+    dep_tree = parse_stan_file(args.stan_file, verbose=args.verbose)
 
     if args.labels:
         label_mappings = load_label_mappings(args.labels)
     else:
         label_mappings = {}
 
-    print(label_mappings)
+    # print(label_mappings)
 
     if args.squish:
         for squish_var in args.squish:
             dep_tree = squish_out_variable(dep_tree, squish_var)
 
-    dot = render_dependency_tree(dep_tree, label_mappings, verbose=args.verbose)
+    dot = render_dependency_tree(dep_tree, label_mappings, explicit=args.explicit)
     
     # Determine the output filename base
     output_base = args.output if args.output else 'dependencies'

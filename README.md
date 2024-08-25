@@ -23,7 +23,7 @@ The resulting generated files are:
 
 - **Graph Rendering**: Automatically generates a dependency graph from a Stan model file, showing the relationships between parameters and data.
 - **Custom Labels**: Supports custom labeling of nodes using a label mapping file. This allows for LaTeX-style symbols or any other custom labels.
-- **Verbosity Control**: Provides a command-line flag to control the level of detail shown in the dependency graph. You can choose to display full functional dependencies or only the names of the distributions.
+- **Verbosity Control**: Provides a command-line flag to control the level of detail shown in the dependency graph. You can choose to display full functional dependencies or only the names of the distributions. Furthermore, you can control the verbosity of the rendering in the output. 
 - **Flexible Output**: Generates both .dot files for further customization and .png images for easy visualization.
 
 ## Installation
@@ -55,10 +55,11 @@ python3 graph_stan.py [options] <stan_file>
 ```
 
 # Command-Line Options
-
+- -h, --help: help menu on the command line
 - -s, --squish: Squish out variables from the dependency tree. Multiple variables can be specified.Remember to terminate the list of variables to squish out with "--"
 - -l, --labels: Specify the path to a label mapping file for custom node labels.
-- -v, --verbose: Show full expressions for the dependencies (default is to show only the distribution names).
+- -e, --explicit: Show full expressions for the dependencies in arguments (default is to show only the distribution names).
+- -v, --verbose: Show verbose output for graph rendering
 - -o, --output: Specify the base name for the output files (without extension)
 
 ## Example Commands
