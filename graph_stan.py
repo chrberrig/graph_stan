@@ -241,82 +241,76 @@ def load_label_mappings(label_file):
     return label_mappings
 
 
-# TODO: finish more elegant implementation of the recursive nature of rendering nodes, if not already rendered!
-# def render_node(node_name, dependency_tree, dot, label_mappings={}, explicit=False)
+import graphviz
+
+def render_node(dot, var, details, label_mappings, added_nodes, explicit):
+    """
+    Renders a single node and its label based on its details.
+
+    Parameters:
+    - dot: The Graphviz Digraph object.
+    - var: The variable name.
+    - details: The details dictionary for the variable.
+    - label_mappings: A dictionary for custom label mappings.
+    - added_nodes: A set to track already added nodes.
+    - explicit: Boolean indicating whether to show explicit expressions.
+    """
+    if var in added_nodes:
+        return  # Node already rendered, no need to add again
+
+    var_label = label_mappings.get(var, var)
+
+    #if explicit:
+    #    expression = details['expression']
+    #else:
+    #    expression = details['expression'].split('(')[0]
+    
+    expression = details['expression']
+    if not explicit:
+        expression = expression.split('(')[0]
+
+    relation = details['relation']
+    spacer = "\n" * (relation == "~") + " " * (relation == "=")
+
+    label = f"{var_label}{spacer}{relation}{spacer}{expression}"
+
+    dot.node(var, label=label, shape='circle')
+    added_nodes.add(var)
 
 def render_dependency_tree(dependency_tree, label_mappings={}, explicit=False, verbose=False):
     """
-    Renders a flat dependency tree using Graphviz.
-    
+    Renders a dependency tree using Graphviz.
+
     Parameters:
     - dependency_tree: The dictionary representing the dependency tree.
-    
+    - label_mappings: A dictionary for custom label mappings.
+    - explicit: Boolean indicating whether to show explicit expressions.
+    - verbose: Boolean indicating whether to print verbose output.
+
     Returns:
     - A Graphviz object representing the dependency tree.
     """
-    dot = graphviz.Digraph()
+    dot = graphviz.Digraph(graph_attr={'splines': 'false'})
     added_nodes = set()  # Set to track added nodes
 
-    # Add nodes and edges to the graph
-    if verbose:
-        print("Rendering dependencies:")
+    def render_dependencies(var):
+        if var not in dependency_tree:
+            return  # Base case: no more dependencies
 
-    for var, details in dependency_tree.items():
-        
-        if verbose:
-            print(var)
-            for k, v in details.items():
-                print(" "*4 + f"{k}: {v}")
+        details = dependency_tree[var]
 
-        # Apply label mapping if available
-        var_label = label_mappings.get(var, var)
-        
-        # create a node for each variable
-        # determine the expression to show based on explicit-bool
-        if explicit:
-            expression = details['expression']
-        else:
-            # only keep the distribution name if not explicit
-            expression = details['expression'].split('(')[0]
-        #expression = details['expression']
-        relation = details['relation']
-        spacer = "\n"*(relation=="~") + " "*(relation=="=")
-        
-        label = f"{var_label}{spacer}{relation}{spacer}{expression}" 
-        
-        # add the node if it hasn't been added yet
-        if var not in added_nodes:
-            dot.node(var, label=label, shape='circle')
-            added_nodes.add(var)
-        # dot.node(var, label=label, shape='circle')
-        
-        # create edges from dependencies to the variable
+        # Render the node
+        render_node(dot, var, details, label_mappings, added_nodes, explicit)
+
+        # Render all dependencies of this node recursively
         for dep in details['dependencies']:
             if dep not in added_nodes:
-
-                # Apply label mapping if available
-                dep_label = label_mappings.get(dep, dep)
-                
-                # create a node for each variable
-                # determine the expression to show based on explicit-bool
-                if explicit:
-                    expression = details['expression']
-                else:
-                    # only keep the distribution name if not explicit
-                    expression = details['expression'].split('(')[0]
-                #expression = details['expression']
-                relation = details['relation']
-                spacer = "\n"*(relation=="~") + " "*(relation=="=")
-                
-                dep_label = f"{dep_label}{spacer}{relation}{spacer}{expression}" 
-                
-                # add the node if it hasn't been added yet
-                if var not in added_nodes:
-                    dot.node(dep, label=dep_label, shape='circle')
-                    added_nodes.add(dep)
-                # dot.node(var, label=label, shape='circle')
-
+                render_dependencies(dep)
             dot.edge(dep, var)
+
+    for var in dependency_tree:
+        if var not in added_nodes:
+            render_dependencies(var)
 
     return dot
 
@@ -329,6 +323,7 @@ def main():
     parser.add_argument('-e', '--explicit', action='store_true', help='show full expressions in the dependency graph')
     parser.add_argument('-v', '--verbose', action='store_true', help='show verbose output of stan-file parsing')
     parser.add_argument('-o', '--output', type=str, help='specify the base name for the output files (without extension)')
+    # parser.add_argument('--format', type=str, choices=['graphviz', 'tikz'], default='graphviz', help='output format: graphviz or tikz')
     parser.add_argument('stan_file', type=str, help='path to the stan model file')
 
     args = parser.parse_args()
@@ -346,6 +341,7 @@ def main():
         for squish_var in args.squish:
             dep_tree = squish_out_variable(dep_tree, squish_var)
 
+    # if args.format == "graphviz":
     dot = render_dependency_tree(dep_tree, label_mappings, explicit=args.explicit)
     
     # Determine the output filename base
@@ -360,7 +356,15 @@ def main():
     dot.save('dependencies.dot')
 
     dot.render('dependencies', format='png', view=True, cleanup=True)
-    # visualize_stan_model(args.stan_file)
+
+
+    # elif args.format == 'tikz':
+    #     tikz_code = render_dependency_tree_tikz(dep_tree, label_mappings, explicit=args.explicit)
+    #     
+    #     # Output TikZ code to a .tex file
+    #     output_base = args.output if args.output else 'dependencies'
+    #     with open(f'{output_base}.tex', 'w') as file:
+    #         file.write(tikz_code)
 
 if __name__ == '__main__':
     main()
