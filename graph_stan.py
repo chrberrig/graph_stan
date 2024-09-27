@@ -27,7 +27,8 @@ def find_defined_parameters(content):
     - A set of parameter names that are defined in the content.
     """
     # Regular expression to match parameter declarations
-    type_pattern = r'\b(int|real|vector|matrix|array)\b(?:<.*?>)?(?:\[[^\]]*\])?\s+(\w+)'
+    type_pattern = r'(\b(int|real|vector|matrix|array)\b(?:<.*?>)?(?:\[[^\]]*\])?\s+)+(\w+)'
+    #type_pattern = r'\b(int|real|vector|matrix|array)\b(?:<.*?>)?(?:\[[^\]]*\])?\s+(\w+)'
     
     defined_parameters = set()
 
@@ -39,7 +40,7 @@ def find_defined_parameters(content):
         # Find matches for the types
         match = re.search(type_pattern, line)
         if match:
-            param_name = match.group(2)  # The variable name is captured in the second group
+            param_name = match.groups()[-1]  # The variable name is captured in the second group
             defined_parameters.add(param_name)
 
     return defined_parameters
