@@ -1,4 +1,33 @@
+# Generated outputs
+dependencies
 dependencies.*
 *.png
 *.dot
 *.ipynb
+
+# Packaging artifacts
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+
+# pytest
+.pytest_cache/
+
+# Coverage
+.coverage
+htmlcov/
+
+# OS
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
